@@ -3,231 +3,565 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IO Files - Мемный сайт</title>
+    <title>🎁 День Рождения - 7 испытаний</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+        }
+
+        /* Блюр для неавторизованных */
+        body.blurred {
+            overflow: hidden;
+        }
+
+        .blur-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-        
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px;
+
+        body.blurred .blur-overlay {
+            display: flex;
+        }
+
+        body.blurred .main-content {
+            filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Модальное окно пароля */
+        .password-modal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 40px;
-            margin: 20px;
-            max-width: 800px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: float 3s ease-in-out infinite;
-            border: 3px solid #ffd700;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            animation: float 0.5s ease-out;
+            max-width: 400px;
+            width: 90%;
         }
-        
+
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
-        
-        h1 {
-            color: #ff6b6b;
-            text-align: center;
-            font-size: 3em;
-            margin: 0 0 10px 0;
-            text-shadow: 3px 3px 0px #ffd93d;
+
+        .password-modal h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
         }
-        
-        .subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            border-bottom: 2px dashed #ff6b6b;
-            padding-bottom: 10px;
-        }
-        
-        .file-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 20px;
-            padding: 20px;
-            margin: 20px 0;
-            transition: transform 0.3s;
-            border-left: 5px solid #ff6b6b;
-        }
-        
-        .file-card:hover {
-            transform: scale(1.02);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        
-        .file-title {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #764ba2;
-            margin-bottom: 10px;
-        }
-        
-        .file-title::before {
-            content: "📄 ";
-        }
-        
-        .joke {
-            background: #fff3cd;
-            border-left: 5px solid #ffc107;
+
+        .password-modal input {
+            width: 100%;
             padding: 15px;
             margin: 20px 0;
-            border-radius: 10px;
-            font-style: italic;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            text-align: center;
+            background: rgba(255,255,255,0.9);
         }
-        
-        .joke::before {
-            content: "😂 ";
-            font-size: 1.2em;
-        }
-        
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        .password-modal button {
+            background: #ff6b6b;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 30px;
+            border-radius: 25px;
             font-size: 1.1em;
-            border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: inherit;
-            margin-top: 10px;
+            transition: transform 0.3s;
         }
-        
-        button:hover {
+
+        .password-modal button:hover {
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        
-        .content-box {
-            background: #2d2d2d;
-            color: #0f0;
-            font-family: monospace;
-            padding: 15px;
+
+        .error-msg {
+            color: #ff6b6b;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Основной контент */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffd89b, #c7e9fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .intro {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        /* Шкала прогресса */
+        .progress-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        .progress-bar-container {
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .stats {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        /* Сетка карточек */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card.locked {
+            filter: blur(4px);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .card.unlocked {
+            filter: none;
+            opacity: 1;
+        }
+
+        .lock-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5em;
+        }
+
+        .card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #ffd93d;
+        }
+
+        .card p {
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin: 10px 0;
+        }
+
+        .status.not-done {
+            background: #ff6b6b;
+        }
+
+        .status.checking {
+            background: #ffa500;
+            animation: pulse 1s infinite;
+        }
+
+        .status.done {
+            background: #4caf50;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .card button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .card button:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .card button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .check-message {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
             border-radius: 10px;
-            margin-top: 10px;
-            overflow-x: auto;
             font-size: 0.9em;
+            display: none;
         }
-        
+
+        .check-message.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .footer {
             text-align: center;
-            margin-top: 30px;
-            color: #888;
+            margin-top: 50px;
+            padding: 20px;
+            color: rgba(255,255,255,0.6);
             font-size: 0.9em;
-        }
-        
-        .blink {
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>🎉 IO ФАЙЛЫ НА ГИТХАБЕ 🎉</h1>
-        <div class="subtitle">
-            🤓 Место, где файлы обретают смысл жизни 🤓
-        </div>
-        
-        <div class="file-card">
-            <div class="file-title">input.txt</div>
-            <p>📥 Сюда я кладу данные, которые потом буду обрабатывать. Как холодильник, только для текста!</p>
-            <button onclick="loadInput()">📖 Прочитать input.txt</button>
-            <div id="input-content" class="content-box" style="display: none;"></div>
-        </div>
-        
-        <div class="file-card">
-            <div class="file-title">output.txt</div>
-            <p>📤 Сюда пишутся результаты. Иногда туда попадают глубокие мысли, а иногда просто "Hello World"...</p>
-            <button onclick="loadOutput()">📝 Прочитать output.txt</button>
-            <div id="output-content" class="content-box" style="display: none;"></div>
-        </div>
-        
-        <div class="joke">
-            <strong>Смешной факт дня:</strong> Программисты не умирают, они просто "return null;"<br>
-            <span id="random-joke"></span>
-        </div>
-        
-        <button onclick="showRandomFact()">🎲 Еще факт!</button>
-        
-        <div class="footer">
-            ⭐ Сделано с любовью и кофеином ⭐<br>
-            <span class="blink">🚀 GitHub Pages — это магия 🚀</span>
+<body class="blurred">
+    <div class="blur-overlay">
+        <div class="password-modal">
+            <h2>🔒 Введите пароль</h2>
+            <p>Это секретная страница 🎁</p>
+            <input type="password" id="passwordInput" placeholder="Введите пароль">
+            <button onclick="checkPassword()">Войти</button>
+            <div class="error-msg" id="errorMsg">❌ Неверный пароль!</div>
         </div>
     </div>
-    
+
+    <div class="main-content">
+        <h1>🎂 С ДНЕМ РОЖДЕНИЯ! 🎂</h1>
+        <div class="intro">
+            🎁 Если хочешь получить свой подарок на день рождения,<br>
+            тебе нужно пройти 7 испытаний, но смотри, срок ограничен -<br>
+            <strong>у тебя есть три дня (и три ночи)!</strong> ⏰
+        </div>
+        <div class="timer" id="timer"></div>
+
+        <div class="progress-section">
+            <h3>📊 Прогресс испытаний</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="stats" id="stats">Выполнено: 0 из 7</div>
+        </div>
+
+        <div class="cards-grid" id="cardsGrid"></div>
+        <div class="footer">
+            💝 Удачи в прохождении! 💝
+        </div>
+    </div>
+
     <script>
-        function loadInput() {
-            fetch('input.txt')
-                .then(response => {
-                    if (!response.ok) throw new Error('Файл пока пуст!');
-                    return response.text();
-                })
-                .then(data => {
-                    const div = document.getElementById('input-content');
-                    div.style.display = 'block';
-                    div.innerHTML = `<strong>Содержимое input.txt:</strong><br><br>${escapeHtml(data)}`;
-                })
-                .catch(error => {
-                    document.getElementById('input-content').style.display = 'block';
-                    document.getElementById('input-content').innerHTML = `❌ ${error.message}<br><br>💡 Попробуй создать input.txt в репозитории!`;
-                });
-        }
-        
-        function loadOutput() {
-            fetch('output.txt')
-                .then(response => {
-                    if (!response.ok) throw new Error('Файл пока пуст!');
-                    return response.text();
-                })
-                .then(data => {
-                    const div = document.getElementById('output-content');
-                    div.style.display = 'block';
-                    div.innerHTML = `<strong>Содержимое output.txt:</strong><br><br>${escapeHtml(data)}`;
-                })
-                .catch(error => {
-                    document.getElementById('output-content').style.display = 'block';
-                    document.getElementById('output-content').innerHTML = `❌ ${error.message}<br><br>💡 Запусти Python скрипт, чтобы создать output.txt!`;
-                });
-        }
-        
-        const jokes = [
-            "Почему программисты путают Хэллоуин и Рождество? Потому что 31 Oct = 25 Dec!",
-            "Сколько программистов нужно, чтобы заменить лампочку? Ни одного, это аппаратная проблема!",
-            "Java и JavaScript — это как собака и горячий пес. Ничего общего!",
-            "Почему программисты всегда холодные? Потому что они используют Windows!",
-            "Какое любимое животное программистов? Питон! 🐍",
-            "Почему программист вышел из душа? Потому что инструкция была 'if (wet) exit();'",
-            "Git — это как машина времени, только вместо Дока Брауна — pull requests",
-            "404: Смешная шутка не найдена. Но ты все равно классный! ❤️"
+        // Задания
+        const tasks = [
+            { id: 0, name: "Набей татуху (Наташа)", description: "Твое первое испытание — сделать татуировку. Дерзай! 🔥", status: "not_done", unlocked: true },
+            { id: 1, name: "Испытание 2", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
+            { id: 2, name: "Испытание 3", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
+            { id: 3, name: "Испытание 4", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
+            { id: 4, name: "Испытание 5", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
+            { id: 5, name: "Испытание 6", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
+            { id: 6, name: "Испытание 7", description: "Финальное испытание! Ты почти у цели! 🎯", status: "not_done", unlocked: false }
         ];
-        
-        function showRandomFact() {
-            const randomIndex = Math.floor(Math.random() * jokes.length);
-            document.getElementById('random-joke').innerHTML = `<br>🤣 ${jokes[randomIndex]}`;
+
+        let checkingStates = tasks.map(() => false); // Состояние проверки для каждого задания
+
+        // Функция для обновления отображения
+        function renderTasks() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const card = document.createElement('div');
+                card.className = `card ${!task.unlocked ? 'locked' : 'unlocked'}`;
+                
+                if (!task.unlocked) {
+                    const lockIcon = document.createElement('div');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    card.appendChild(lockIcon);
+                }
+
+                const title = document.createElement('h3');
+                title.textContent = task.name;
+                card.appendChild(title);
+
+                const desc = document.createElement('p');
+                desc.textContent = task.description;
+                card.appendChild(desc);
+
+                const statusSpan = document.createElement('div');
+                statusSpan.className = `status ${task.status}`;
+                
+                if (task.status === 'not_done') statusSpan.textContent = '❌ Не выполнено';
+                else if (task.status === 'checking') statusSpan.textContent = '⏳ Проверка выполнения...';
+                else if (task.status === 'done') statusSpan.textContent = '✅ Выполнено!';
+                
+                card.appendChild(statusSpan);
+
+                const button = document.createElement('button');
+                
+                if (task.unlocked && task.status === 'not_done') {
+                    button.textContent = '✨ Я выполнила! ✨';
+                    button.onclick = () => checkTask(index);
+                } else if (task.unlocked && task.status === 'checking') {
+                    button.textContent = '⏳ Ожидание проверки...';
+                    button.disabled = true;
+                } else if (task.unlocked && task.status === 'done') {
+                    button.textContent = '✅ Завершено';
+                    button.disabled = true;
+                } else if (!task.unlocked) {
+                    button.textContent = '🔒 Заблокировано';
+                    button.disabled = true;
+                }
+
+                card.appendChild(button);
+
+                // Сообщение о проверке
+                const checkMsg = document.createElement('div');
+                checkMsg.className = 'check-message';
+                checkMsg.id = `check-msg-${index}`;
+                card.appendChild(checkMsg);
+
+                grid.appendChild(card);
+            });
+
+            updateProgress();
+        }
+
+        // Проверка задания
+        function checkTask(taskId) {
+            if (tasks[taskId].status !== 'not_done') return;
+
+            // Меняем статус на "проверка"
+            tasks[taskId].status = 'checking';
+            
+            // Показываем сообщение о проверке
+            const msgDiv = document.getElementById(`check-msg-${taskId}`);
+            msgDiv.textContent = '🔍 Проверка выполнения... Администратор оценит задание и скоро подтвердит!';
+            msgDiv.classList.add('show');
+            
+            renderTasks();
+
+            // Имитация проверки (через 3 секунды "администратор" подтверждает)
+            setTimeout(() => {
+                if (tasks[taskId].status === 'checking') {
+                    completeTask(taskId);
+                }
+            }, 3000);
+        }
+
+        // Завершение задания
+        function completeTask(taskId) {
+            tasks[taskId].status = 'done';
+            
+            const msgDiv = document.getElementById(`check-msg-${taskId}`);
+            msgDiv.textContent = '✅ Поздравляю! Задание выполнено! Следующее испытание открыто! 🎉';
+            msgDiv.classList.add('show');
+            
+            // Открываем следующее задание, если оно существует
+            if (taskId + 1 < tasks.length) {
+                tasks[taskId + 1].unlocked = true;
+                const nextMsg = document.getElementById(`check-msg-${taskId + 1}`);
+                if (nextMsg) {
+                    nextMsg.textContent = '🔓 Новое испытание открыто!';
+                    nextMsg.classList.add('show');
+                    setTimeout(() => {
+                        nextMsg.classList.remove('show');
+                    }, 3000);
+                }
+            }
+            
+            renderTasks();
+        }
+
+        // Обновление прогресса
+        function updateProgress() {
+            const completedCount = tasks.filter(t => t.status === 'done').length;
+            const percent = (completedCount / tasks.length) * 100;
+            
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${Math.round(percent)}%`;
+            
+            document.getElementById('stats').textContent = `Выполнено: ${completedCount} из ${tasks.length}`;
+            
+            // Сохраняем прогресс в localStorage
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('checkingStates', JSON.stringify(checkingStates));
+        }
+
+        // Проверка пароля
+        function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            if (password === 'taburet') {
+                document.body.classList.remove('blurred');
+                localStorage.setItem('authenticated', 'true');
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // Загрузка сохраненного прогресса
+        function loadProgress() {
+            const savedTasks = localStorage.getItem('tasks');
+            if (savedTasks) {
+                const parsed = JSON.parse(savedTasks);
+                for (let i = 0; i < parsed.length; i++) {
+                    tasks[i].status = parsed[i].status;
+                    tasks[i].unlocked = parsed[i].unlocked;
+                }
+            }
+            
+            const savedChecking = localStorage.getItem('checkingStates');
+            if (savedChecking) {
+                checkingStates = JSON.parse(savedChecking);
+            }
+            
+            renderTasks();
+        }
+
+        // Таймер обратного отсчета (3 дня)
+        function startTimer() {
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 3);
+            targetDate.setHours(23, 59, 59);
+            
+            function updateTimer() {
+                const now = new Date();
+                const diff = targetDate - now;
+                
+                if (diff <= 0) {
+                    document.getElementById('timer').innerHTML = '⏰ Время вышло! ⏰';
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                document.getElementById('timer').innerHTML = `⏱️ Осталось времени: ${days}д ${hours}ч ${minutes}м ${seconds}с`;
+            }
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
         }
         
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // Проверяем, аутентифицирован ли пользователь
+        if (localStorage.getItem('authenticated') === 'true') {
+            document.body.classList.remove('blurred');
         }
         
-        // Показываем случайную шутку при загрузке
-        showRandomFact();
+        // Загружаем прогресс и запускаем
+        loadProgress();
+        startTimer();
+        
+        // Функция для ручного переключения статуса (для админа)
+        window.adminCompleteTask = function(taskId) {
+            if (tasks[taskId].status === 'checking') {
+                completeTask(taskId);
+            }
+        };
+        
+        // Консольная команда для быстрого открытия всех заданий (для тестирования)
+        window.unlockAll = function() {
+            tasks.forEach((task, i) => {
+                task.unlocked = true;
+            });
+            renderTasks();
+            console.log('Все задания разблокированы!');
+        };
+        
+        // Для админа: принудительно завершить задание
+        window.forceComplete = function(taskId) {
+            if (tasks[taskId]) {
+                completeTask(taskId);
+            }
+        };
     </script>
 </body>
 </html>
-EOF
