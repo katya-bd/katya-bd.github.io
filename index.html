@@ -307,7 +307,7 @@
     <div class="blur-overlay">
         <div class="password-modal">
             <h2>🔒 Введите пароль</h2>
-            <p>Это секретная страница 🎁</p>
+            <p>Это секретная страница</p>
             <input type="password" id="passwordInput" placeholder="Введите пароль">
             <button onclick="checkPassword()">Войти</button>
             <div class="error-msg" id="errorMsg">❌ Неверный пароль!</div>
@@ -581,7 +581,7 @@
                 
                 const timerDiv = document.getElementById('timer');
                 if (timerDiv) {
-                    timerDiv.innerHTML = `⏱️ Осталось до 29 марта 8:00: ${days}д ${hours}ч ${minutes}м ${seconds}с`;
+                    timerDiv.innerHTML = `⏱️ Осталось: ${days}д ${hours}ч ${minutes}м ${seconds}с`;
                 }
             }
             
