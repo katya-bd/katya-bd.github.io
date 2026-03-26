@@ -332,9 +332,27 @@
     </div>
     <script>
         let tasks = [];
-        let checkingStates = [];
-
-        // Загрузка данных из JSON (но НЕ показываем выполненные статусы)
+        
+        // Ключ для localStorage
+        const STORAGE_KEY = 'completed_tasks_status';
+        
+        // Загружаем сохраненные подтвержденные задания
+        function loadSavedCompletedStatus() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {}; // { "0": true, "1": false, ... }
+        }
+        
+        // Сохраняем статус подтвержденного задания
+        function saveCompletedStatus(taskId, isCompleted) {
+            const saved = loadSavedCompletedStatus();
+            saved[taskId] = isCompleted;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        }
+        
+        // Загрузка данных из JSON
         async function loadTasksStatus() {
             try {
                 const response = await fetch('tasks-status.json?v=' + Date.now());
@@ -343,16 +361,39 @@
                 }
                 const data = await response.json();
                 
-                // Загружаем задания, но НЕ показываем статус "done" автоматически
-                // Все задания стартуют как "not_done", даже если в JSON true
-                tasks = data.tasks.map((task, index) => ({
-                    id: task.id,
-                    name: task.name,
-                    description: task.description,
-                    completed: task.completed, // сохраняем реальный статус из JSON
-                    status: 'not_done', // ВСЕГДА начинаем с "не выполнено" при загрузке
-                    unlocked: index === 0 ? true : false // только первое открыто
-                }));
+                // Загружаем сохраненные подтвержденные статусы
+                const savedCompleted = loadSavedCompletedStatus();
+                
+                // Формируем задания
+                tasks = data.tasks.map((task, index) => {
+                    // Проверяем, было ли задание уже подтверждено (после нажатия кнопки)
+                    const wasConfirmed = savedCompleted[index] === true;
+                    // Проверяем, выполнено ли в JSON (для админа)
+                    const isCompletedInJson = task.completed;
+                    
+                    let status = 'not_done';
+                    // Если задание уже было подтверждено через кнопку — показываем как done
+                    if (wasConfirmed) {
+                        status = 'done';
+                    }
+                    
+                    return {
+                        id: task.id,
+                        name: task.name,
+                        description: task.description,
+                        completed: isCompletedInJson,
+                        status: status,
+                        unlocked: index === 0 ? true : false
+                    };
+                });
+                
+                // Открываем разблокированные задания на основе подтвержденных
+                for (let i = 1; i < tasks.length; i++) {
+                    const prevWasConfirmed = loadSavedCompletedStatus()[i-1] === true;
+                    if (prevWasConfirmed) {
+                        tasks[i].unlocked = true;
+                    }
+                }
                 
                 renderTasks();
                 return true;
@@ -362,13 +403,14 @@
                 return false;
             }
         }
-
+        
         // Проверка задания
         async function checkTask(taskId) {
-            // Нельзя проверять если уже в процессе проверки или выполнено
+            // Если уже в процессе проверки
             if (tasks[taskId].status === 'checking') return;
+            
+            // Если уже выполнено (подтверждено ранее)
             if (tasks[taskId].status === 'done') {
-                // Если уже выполнено, показываем сообщение
                 const msgDiv = document.getElementById(`check-msg-${taskId}`);
                 msgDiv.textContent = '✅ Это задание уже выполнено! Переходи к следующему!';
                 msgDiv.classList.add('show');
@@ -387,7 +429,7 @@
             msgDiv.classList.add('show');
             
             renderTasks();
-
+            
             // Загружаем актуальный статус из JSON
             setTimeout(async () => {
                 try {
@@ -396,9 +438,13 @@
                     const isCompleted = data.tasks[taskId].completed;
                     
                     if (isCompleted) {
-                        // Задание выполнено в JSON
+                        // Задание выполнено в JSON — сохраняем в localStorage
                         tasks[taskId].status = 'done';
                         tasks[taskId].completed = true;
+                        
+                        // СОХРАНЯЕМ в localStorage, чтобы после перезагрузки осталось
+                        saveCompletedStatus(taskId, true);
+                        
                         msgDiv.textContent = '✅ Поздравляю! Администратор подтвердил выполнение! Следующее испытание открыто! 🎉';
                         
                         // Открываем следующее задание
@@ -423,14 +469,14 @@
                 }
             }, 3000);
         }
-
+        
         // Рендер заданий
         function renderTasks() {
             const grid = document.getElementById('cardsGrid');
             if (!grid) return;
             
             grid.innerHTML = '';
-
+            
             tasks.forEach((task, index) => {
                 const card = document.createElement('div');
                 card.className = `card ${!task.unlocked ? 'locked' : 'unlocked'}`;
@@ -441,15 +487,15 @@
                     lockIcon.textContent = '🔒';
                     card.appendChild(lockIcon);
                 }
-
+                
                 const title = document.createElement('h3');
                 title.textContent = task.name;
                 card.appendChild(title);
-
+                
                 const desc = document.createElement('p');
                 desc.textContent = task.description;
                 card.appendChild(desc);
-
+                
                 const statusSpan = document.createElement('div');
                 statusSpan.className = `status ${task.status}`;
                 
@@ -458,7 +504,7 @@
                 else if (task.status === 'done') statusSpan.textContent = '✅ Выполнено!';
                 
                 card.appendChild(statusSpan);
-
+                
                 const button = document.createElement('button');
                 
                 if (task.unlocked && task.status === 'not_done') {
@@ -474,21 +520,21 @@
                     button.textContent = '🔒 Заблокировано';
                     button.disabled = true;
                 }
-
+                
                 card.appendChild(button);
-
+                
                 const checkMsg = document.createElement('div');
                 checkMsg.className = 'check-message';
                 checkMsg.id = `check-msg-${index}`;
                 card.appendChild(checkMsg);
-
+                
                 grid.appendChild(card);
             });
-
+            
             updateProgress();
         }
-
-        // Обновление прогресса (считаем только те, где статус done)
+        
+        // Обновление прогресса
         function updateProgress() {
             const completedCount = tasks.filter(t => t.status === 'done').length;
             const percent = (completedCount / tasks.length) * 100;
@@ -496,7 +542,11 @@
             const progressBar = document.getElementById('progressBar');
             if (progressBar) {
                 progressBar.style.width = `${percent}%`;
-                progressBar.textContent = `${Math.round(percent)}%`;
+            }
+            
+            const percentText = document.getElementById('percentText');
+            if (percentText) {
+                percentText.textContent = `${Math.round(percent)}% выполнено`;
             }
             
             const stats = document.getElementById('stats');
@@ -504,7 +554,7 @@
                 stats.textContent = `Выполнено: ${completedCount} из ${tasks.length}`;
             }
         }
-
+        
         // Проверка пароля
         function checkPassword() {
             const password = document.getElementById('passwordInput').value;
@@ -518,7 +568,7 @@
                 }, 2000);
             }
         }
-
+        
         // Таймер до 8:00 29 марта 2026
         function startTimer() {
             const targetDate = new Date(2026, 2, 29, 8, 0, 0);
@@ -547,6 +597,13 @@
             updateTimer();
             setInterval(updateTimer, 1000);
         }
+        
+        // Сброс всех сохраненных заданий (для админа, если нужно сбросить прогресс)
+        window.resetAllTasks = function() {
+            localStorage.removeItem(STORAGE_KEY);
+            loadTasksStatus();
+            console.log('Все задания сброшены!');
+        };
         
         // Принудительная проверка (для админа)
         window.forceCheck = function(taskId) {
