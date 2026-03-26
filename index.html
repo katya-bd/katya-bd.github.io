@@ -537,16 +537,15 @@
         
         // Обновление прогресса
         function updateProgress() {
-            // Считаем количество заданий со статусом 'done'
             const completedCount = tasks.filter(t => t.status === 'done').length;
             const total = tasks.length;
             const percent = total > 0 ? (completedCount / total) * 100 : 0;
             
-            console.log(`Прогресс: ${completedCount} из ${total} = ${percent}%`);
+            console.log(`📊 Прогресс: ${completedCount}/${total} = ${percent.toFixed(0)}%`);
             
             const progressBar = document.getElementById('progressBar');
             if (progressBar) {
-                progressBar.style.width = `${percent}%`;
+                progressBar.style.width = percent + '%';
             }
             
             const percentText = document.getElementById('percentText');
