@@ -330,7 +330,7 @@
             💝 Удачи в прохождении! 💝
         </div>
     </div>
-    <script>
+        <script>
         let tasks = [];
         
         // Ключ для localStorage
@@ -342,7 +342,7 @@
             if (saved) {
                 return JSON.parse(saved);
             }
-            return {}; // { "0": true, "1": false, ... }
+            return {};
         }
         
         // Сохраняем статус подтвержденного задания
@@ -368,32 +368,33 @@
                 tasks = data.tasks.map((task, index) => {
                     // Проверяем, было ли задание уже подтверждено (после нажатия кнопки)
                     const wasConfirmed = savedCompleted[index] === true;
-                    // Проверяем, выполнено ли в JSON (для админа)
-                    const isCompletedInJson = task.completed;
                     
-                    let status = 'not_done';
-                    // Если задание уже было подтверждено через кнопку — показываем как done
-                    if (wasConfirmed) {
-                        status = 'done';
-                    }
+                    // Статус: done если подтверждено, иначе not_done
+                    let status = wasConfirmed ? 'done' : 'not_done';
                     
                     return {
                         id: task.id,
                         name: task.name,
                         description: task.description,
-                        completed: isCompletedInJson,
+                        completed: task.completed,
                         status: status,
-                        unlocked: index === 0 ? true : false
+                        unlocked: false
                     };
                 });
                 
                 // Открываем разблокированные задания на основе подтвержденных
+                // Первое задание всегда открыто
+                tasks[0].unlocked = true;
+                
+                // Для каждого задания, если предыдущее выполнено (статус done), открываем следующее
                 for (let i = 1; i < tasks.length; i++) {
-                    const prevWasConfirmed = loadSavedCompletedStatus()[i-1] === true;
-                    if (prevWasConfirmed) {
+                    if (tasks[i-1].status === 'done') {
                         tasks[i].unlocked = true;
                     }
                 }
+                
+                console.log('Загружено заданий:', tasks.length);
+                console.log('Выполнено:', tasks.filter(t => t.status === 'done').length);
                 
                 renderTasks();
                 return true;
@@ -442,7 +443,7 @@
                         tasks[taskId].status = 'done';
                         tasks[taskId].completed = true;
                         
-                        // СОХРАНЯЕМ в localStorage, чтобы после перезагрузки осталось
+                        // СОХРАНЯЕМ в localStorage
                         saveCompletedStatus(taskId, true);
                         
                         msgDiv.textContent = '✅ Поздравляю! Администратор подтвердил выполнение! Следующее испытание открыто! 🎉';
@@ -536,8 +537,12 @@
         
         // Обновление прогресса
         function updateProgress() {
+            // Считаем количество заданий со статусом 'done'
             const completedCount = tasks.filter(t => t.status === 'done').length;
-            const percent = (completedCount / tasks.length) * 100;
+            const total = tasks.length;
+            const percent = total > 0 ? (completedCount / total) * 100 : 0;
+            
+            console.log(`Прогресс: ${completedCount} из ${total} = ${percent}%`);
             
             const progressBar = document.getElementById('progressBar');
             if (progressBar) {
@@ -551,7 +556,7 @@
             
             const stats = document.getElementById('stats');
             if (stats) {
-                stats.textContent = `Выполнено: ${completedCount} из ${tasks.length}`;
+                stats.textContent = `Выполнено: ${completedCount} из ${total}`;
             }
         }
         
@@ -598,11 +603,18 @@
             setInterval(updateTimer, 1000);
         }
         
-        // Сброс всех сохраненных заданий (для админа, если нужно сбросить прогресс)
+        // Сброс всех сохраненных заданий (для админа)
         window.resetAllTasks = function() {
             localStorage.removeItem(STORAGE_KEY);
             loadTasksStatus();
             console.log('Все задания сброшены!');
+        };
+        
+        // Посмотреть текущий прогресс в консоли
+        window.showProgress = function() {
+            const completed = tasks.filter(t => t.status === 'done').length;
+            console.log(`Выполнено: ${completed} из ${tasks.length} (${Math.round(completed/tasks.length*100)}%)`);
+            console.log('Статусы заданий:', tasks.map(t => ({name: t.name, status: t.status})));
         };
         
         // Принудительная проверка (для админа)
