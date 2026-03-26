@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IO Files - Мемный сайт</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px;
+            margin: 20px;
+            max-width: 800px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: float 3s ease-in-out infinite;
+            border: 3px solid #ffd700;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+            font-size: 3em;
+            margin: 0 0 10px 0;
+            text-shadow: 3px 3px 0px #ffd93d;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            border-bottom: 2px dashed #ff6b6b;
+            padding-bottom: 10px;
+        }
+        
+        .file-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: transform 0.3s;
+            border-left: 5px solid #ff6b6b;
+        }
+        
+        .file-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .file-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+        
+        .file-title::before {
+            content: "📄 ";
+        }
+        
+        .joke {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-style: italic;
+        }
+        
+        .joke::before {
+            content: "😂 ";
+            font-size: 1.2em;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .content-box {
+            background: #2d2d2d;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 IO ФАЙЛЫ НА ГИТХАБЕ 🎉</h1>
+        <div class="subtitle">
+            🤓 Место, где файлы обретают смысл жизни 🤓
+        </div>
+        
+        <div class="file-card">
+            <div class="file-title">input.txt</div>
+            <p>📥 Сюда я кладу данные, которые потом буду обрабатывать. Как холодильник, только для текста!</p>
+            <button onclick="loadInput()">📖 Прочитать input.txt</button>
+            <div id="input-content" class="content-box" style="display: none;"></div>
+        </div>
+        
+        <div class="file-card">
+            <div class="file-title">output.txt</div>
+            <p>📤 Сюда пишутся результаты. Иногда туда попадают глубокие мысли, а иногда просто "Hello World"...</p>
+            <button onclick="loadOutput()">📝 Прочитать output.txt</button>
+            <div id="output-content" class="content-box" style="display: none;"></div>
+        </div>
+        
+        <div class="joke">
+            <strong>Смешной факт дня:</strong> Программисты не умирают, они просто "return null;"<br>
+            <span id="random-joke"></span>
+        </div>
+        
+        <button onclick="showRandomFact()">🎲 Еще факт!</button>
+        
+        <div class="footer">
+            ⭐ Сделано с любовью и кофеином ⭐<br>
+            <span class="blink">🚀 GitHub Pages — это магия 🚀</span>
+        </div>
+    </div>
+    
+    <script>
+        function loadInput() {
+            fetch('input.txt')
+                .then(response => {
+                    if (!response.ok) throw new Error('Файл пока пуст!');
+                    return response.text();
+                })
+                .then(data => {
+                    const div = document.getElementById('input-content');
+                    div.style.display = 'block';
+                    div.innerHTML = `<strong>Содержимое input.txt:</strong><br><br>${escapeHtml(data)}`;
+                })
+                .catch(error => {
+                    document.getElementById('input-content').style.display = 'block';
+                    document.getElementById('input-content').innerHTML = `❌ ${error.message}<br><br>💡 Попробуй создать input.txt в репозитории!`;
+                });
+        }
+        
+        function loadOutput() {
+            fetch('output.txt')
+                .then(response => {
+                    if (!response.ok) throw new Error('Файл пока пуст!');
+                    return response.text();
+                })
+                .then(data => {
+                    const div = document.getElementById('output-content');
+                    div.style.display = 'block';
+                    div.innerHTML = `<strong>Содержимое output.txt:</strong><br><br>${escapeHtml(data)}`;
+                })
+                .catch(error => {
+                    document.getElementById('output-content').style.display = 'block';
+                    document.getElementById('output-content').innerHTML = `❌ ${error.message}<br><br>💡 Запусти Python скрипт, чтобы создать output.txt!`;
+                });
+        }
+        
+        const jokes = [
+            "Почему программисты путают Хэллоуин и Рождество? Потому что 31 Oct = 25 Dec!",
+            "Сколько программистов нужно, чтобы заменить лампочку? Ни одного, это аппаратная проблема!",
+            "Java и JavaScript — это как собака и горячий пес. Ничего общего!",
+            "Почему программисты всегда холодные? Потому что они используют Windows!",
+            "Какое любимое животное программистов? Питон! 🐍",
+            "Почему программист вышел из душа? Потому что инструкция была 'if (wet) exit();'",
+            "Git — это как машина времени, только вместо Дока Брауна — pull requests",
+            "404: Смешная шутка не найдена. Но ты все равно классный! ❤️"
+        ];
+        
+        function showRandomFact() {
+            const randomIndex = Math.floor(Math.random() * jokes.length);
+            document.getElementById('random-joke').innerHTML = `<br>🤣 ${jokes[randomIndex]}`;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Показываем случайную шутку при загрузке
+        showRandomFact();
+    </script>
+</body>
+</html>
+EOF
