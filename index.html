@@ -301,6 +301,94 @@
             color: rgba(255,255,255,0.6);
             font-size: 0.9em;
         }
+
+        /* Модальное окно с билетом */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            animation: slideUp 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 3px solid gold;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-content p {
+            color: #333;
+            font-size: 1.2em;
+            margin: 15px 0;
+        }
+
+        .close-modal {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+
+        .close-modal:hover {
+            transform: scale(1.05);
+        }
+
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1999;
+        }
     </style>
 </head>
 <body class="blurred">
@@ -319,7 +407,7 @@
         <div class="intro">
             🎁 Если хочешь получить свой подарок на день рождения,<br>
             тебе нужно пройти 7 испытаний, но смотри, срок ограничен -<br>
-            <strong>у тебя есть три дня (и три ночи)!</strong> ⏰
+            <strong>у тебя есть всего пару дней!</strong> ⏰
         </div>
         <div class="timer" id="timer"></div>
 
@@ -334,7 +422,19 @@
 
         <div class="cards-grid" id="cardsGrid"></div>
         <div class="footer">
-            💝 Удачи в прохождении! 💝
+            💝 Удачи, Котенок! 💝
+        </div>
+    </div>
+
+    <!-- Модальное окно с билетом -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <h2>🎉 ПОЗДРАВЛЯЮ! 🎉</h2>
+            <p>Ты прошла все 7 испытаний!</p>
+            <p>Вот твой заветный билет:</p>
+            <img id="ticketImage" src="" alt="Билет" style="max-width: 100%; border-radius: 15px;">
+            <p>✨ Сохрани этот билет — это твой пропуск к подарку! ✨</p>
+            <button class="close-modal" onclick="closeTicketModal()">Закрыть</button>
         </div>
     </div>
 
@@ -544,6 +644,9 @@
             if (stats) {
                 stats.textContent = `Выполнено: ${completedCount} из ${total}`;
             }
+            
+            // Проверяем, все ли задания выполнены
+            checkAllTasksCompleted();
         }
         
         // Проверка пароля
@@ -592,9 +695,77 @@
         // Сброс всех сохраненных заданий (для админа)
         window.resetAllTasks = function() {
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem('ticket_shown');
             loadTasksStatus();
             console.log('Все задания сброшены!');
         };
+        
+        // Функция показа билета
+        function showTicketModal() {
+            const modal = document.getElementById('ticketModal');
+            const img = document.getElementById('ticketImage');
+            
+            // Ссылка на изображение билета (загрузи картинку ticket.jpg в репозиторий)
+            img.src = 'ticket.jpg';
+            
+            modal.classList.add('show');
+            startConfetti();
+        }
+        
+        function closeTicketModal() {
+            const modal = document.getElementById('ticketModal');
+            modal.classList.remove('show');
+            stopConfetti();
+        }
+        
+        // Конфетти
+        let confettiInterval;
+        
+        function startConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4'];
+            const confettiContainer = document.createElement('div');
+            confettiContainer.className = 'confetti';
+            document.body.appendChild(confettiContainer);
+            
+            confettiInterval = setInterval(() => {
+                for (let i = 0; i < 40; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'absolute';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '-10px';
+                    confetti.style.width = Math.random() * 12 + 5 + 'px';
+                    confetti.style.height = Math.random() * 12 + 5 + 'px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.opacity = Math.random() * 0.8 + 0.2;
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0%';
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+                    confettiContainer.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 5000);
+                }
+            }, 200);
+        }
+        
+        function stopConfetti() {
+            clearInterval(confettiInterval);
+            const container = document.querySelector('.confetti');
+            if (container) container.remove();
+        }
+        
+        // Проверка завершения всех заданий
+        function checkAllTasksCompleted() {
+            const completedCount = tasks.filter(t => t.status === 'done').length;
+            const total = tasks.length;
+            const wasShown = localStorage.getItem('ticket_shown');
+            
+            if (completedCount === total && !wasShown && total > 0) {
+                showTicketModal();
+                localStorage.setItem('ticket_shown', 'true');
+            }
+        }
         
         // Инициализация
         if (localStorage.getItem('authenticated') === 'true') {
