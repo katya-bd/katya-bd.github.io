@@ -9,7 +9,7 @@
         {
             "id": 1,
             "name": "Испытание 2",
-            "completed": false,
+            "completed": true,
             "description": "Секретное задание откроется позже"
         },
         {
