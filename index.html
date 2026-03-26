@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎁 День Рождения - 7 испытаний</title>
     <style>
+        /* ... все стили оставляем такими же как были ... */
         * {
             margin: 0;
             padding: 0;
@@ -18,7 +19,6 @@
             color: #fff;
         }
 
-        /* Блюр для неавторизованных */
         body.blurred {
             overflow: hidden;
         }
@@ -47,7 +47,6 @@
             user-select: none;
         }
 
-        /* Модальное окно пароля */
         .password-modal {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 40px;
@@ -107,7 +106,6 @@
             display: none;
         }
 
-        /* Основной контент */
         .main-content {
             max-width: 1200px;
             margin: 0 auto;
@@ -142,7 +140,6 @@
             font-weight: bold;
         }
 
-        /* Шкала прогресса */
         .progress-section {
             background: rgba(255,255,255,0.1);
             border-radius: 20px;
@@ -175,7 +172,6 @@
             font-size: 1.2em;
         }
 
-        /* Сетка карточек */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -333,22 +329,92 @@
     </div>
 
     <script>
-        // Задания
-        const tasks = [
-            { id: 0, name: "Набей татуху (Наташа)", description: "Твое первое испытание — сделать татуировку. Дерзай! 🔥", status: "not_done", unlocked: true },
-            { id: 1, name: "Испытание 2", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
-            { id: 2, name: "Испытание 3", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
-            { id: 3, name: "Испытание 4", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
-            { id: 4, name: "Испытание 5", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
-            { id: 5, name: "Испытание 6", description: "Секретное задание откроется позже", status: "not_done", unlocked: false },
-            { id: 6, name: "Испытание 7", description: "Финальное испытание! Ты почти у цели! 🎯", status: "not_done", unlocked: false }
-        ];
+        let tasks = [];
+        let checkingStates = [];
 
-        let checkingStates = tasks.map(() => false); // Состояние проверки для каждого задания
+        // Загрузка статусов из JSON файла
+        async function loadTasksStatus() {
+            try {
+                const response = await fetch('tasks-status.json?v=' + Date.now());
+                if (!response.ok) {
+                    throw new Error('Файл tasks-status.json не найден');
+                }
+                const data = await response.json();
+                tasks = data.tasks.map(task => ({
+                    ...task,
+                    unlocked: task.id === 0 ? true : (task.id > 0 ? tasks[task.id-1]?.completed || false : false),
+                    status: task.completed ? 'done' : 'not_done'
+                }));
+                
+                // Обновляем unlocked статусы на основе выполненных заданий
+                for (let i = 1; i < tasks.length; i++) {
+                    tasks[i].unlocked = tasks[i-1].completed;
+                }
+                
+                renderTasks();
+                return true;
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                document.getElementById('cardsGrid').innerHTML = '<div style="text-align:center;padding:50px;">❌ Ошибка: файл tasks-status.json не найден. Создайте его в репозитории.</div>';
+                return false;
+            }
+        }
 
-        // Функция для обновления отображения
+        // Проверка задания
+        async function checkTask(taskId) {
+            if (tasks[taskId].status !== 'not_done') return;
+
+            // Меняем статус на "проверка"
+            tasks[taskId].status = 'checking';
+            
+            // Показываем сообщение о проверке
+            const msgDiv = document.getElementById(`check-msg-${taskId}`);
+            msgDiv.textContent = '🔍 Проверка выполнения... Администратор проверяет задание...';
+            msgDiv.classList.add('show');
+            
+            renderTasks();
+
+            // Загружаем актуальный статус из JSON
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('tasks-status.json?v=' + Date.now());
+                    const data = await response.json();
+                    const isCompleted = data.tasks[taskId].completed;
+                    
+                    if (isCompleted) {
+                        // Задание выполнено в JSON
+                        tasks[taskId].status = 'done';
+                        tasks[taskId].completed = true;
+                        msgDiv.textContent = '✅ Поздравляю! Администратор подтвердил выполнение! Следующее испытание открыто! 🎉';
+                        
+                        // Открываем следующее задание
+                        if (taskId + 1 < tasks.length) {
+                            tasks[taskId + 1].unlocked = true;
+                        }
+                    } else {
+                        // Задание не выполнено
+                        tasks[taskId].status = 'not_done';
+                        msgDiv.textContent = '❌ Администратор еще не подтвердил выполнение. Попробуй позже или уточни у Наташи!';
+                        setTimeout(() => {
+                            msgDiv.classList.remove('show');
+                        }, 3000);
+                    }
+                    
+                    renderTasks();
+                } catch (error) {
+                    console.error('Ошибка проверки:', error);
+                    tasks[taskId].status = 'not_done';
+                    msgDiv.textContent = '❌ Ошибка проверки. Попробуй позже.';
+                    renderTasks();
+                }
+            }, 3000);
+        }
+
+        // Рендер заданий
         function renderTasks() {
             const grid = document.getElementById('cardsGrid');
+            if (!grid) return;
+            
             grid.innerHTML = '';
 
             tasks.forEach((task, index) => {
@@ -397,7 +463,6 @@
 
                 card.appendChild(button);
 
-                // Сообщение о проверке
                 const checkMsg = document.createElement('div');
                 checkMsg.className = 'check-message';
                 checkMsg.id = `check-msg-${index}`;
@@ -409,66 +474,21 @@
             updateProgress();
         }
 
-        // Проверка задания
-        function checkTask(taskId) {
-            if (tasks[taskId].status !== 'not_done') return;
-
-            // Меняем статус на "проверка"
-            tasks[taskId].status = 'checking';
-            
-            // Показываем сообщение о проверке
-            const msgDiv = document.getElementById(`check-msg-${taskId}`);
-            msgDiv.textContent = '🔍 Проверка выполнения... Администратор оценит задание и скоро подтвердит!';
-            msgDiv.classList.add('show');
-            
-            renderTasks();
-
-            // Имитация проверки (через 3 секунды "администратор" подтверждает)
-            setTimeout(() => {
-                if (tasks[taskId].status === 'checking') {
-                    completeTask(taskId);
-                }
-            }, 3000);
-        }
-
-        // Завершение задания
-        function completeTask(taskId) {
-            tasks[taskId].status = 'done';
-            
-            const msgDiv = document.getElementById(`check-msg-${taskId}`);
-            msgDiv.textContent = '✅ Поздравляю! Задание выполнено! Следующее испытание открыто! 🎉';
-            msgDiv.classList.add('show');
-            
-            // Открываем следующее задание, если оно существует
-            if (taskId + 1 < tasks.length) {
-                tasks[taskId + 1].unlocked = true;
-                const nextMsg = document.getElementById(`check-msg-${taskId + 1}`);
-                if (nextMsg) {
-                    nextMsg.textContent = '🔓 Новое испытание открыто!';
-                    nextMsg.classList.add('show');
-                    setTimeout(() => {
-                        nextMsg.classList.remove('show');
-                    }, 3000);
-                }
-            }
-            
-            renderTasks();
-        }
-
         // Обновление прогресса
         function updateProgress() {
             const completedCount = tasks.filter(t => t.status === 'done').length;
             const percent = (completedCount / tasks.length) * 100;
             
             const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = `${percent}%`;
-            progressBar.textContent = `${Math.round(percent)}%`;
+            if (progressBar) {
+                progressBar.style.width = `${percent}%`;
+                progressBar.textContent = `${Math.round(percent)}%`;
+            }
             
-            document.getElementById('stats').textContent = `Выполнено: ${completedCount} из ${tasks.length}`;
-            
-            // Сохраняем прогресс в localStorage
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            localStorage.setItem('checkingStates', JSON.stringify(checkingStates));
+            const stats = document.getElementById('stats');
+            if (stats) {
+                stats.textContent = `Выполнено: ${completedCount} из ${tasks.length}`;
+            }
         }
 
         // Проверка пароля
@@ -485,82 +505,46 @@
             }
         }
 
-        // Загрузка сохраненного прогресса
-        function loadProgress() {
-            const savedTasks = localStorage.getItem('tasks');
-            if (savedTasks) {
-                const parsed = JSON.parse(savedTasks);
-                for (let i = 0; i < parsed.length; i++) {
-                    tasks[i].status = parsed[i].status;
-                    tasks[i].unlocked = parsed[i].unlocked;
+        // Таймер до 8:00 29 марта 2026
+        function startTimer() {
+            const targetDate = new Date(2026, 2, 29, 8, 0, 0);
+            
+            function updateTimer() {
+                const now = new Date();
+                const diff = targetDate - now;
+                
+                if (diff <= 0) {
+                    const timerDiv = document.getElementById('timer');
+                    if (timerDiv) timerDiv.innerHTML = '⏰ Время вышло! Подарок ждет тебя! 🎁';
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const timerDiv = document.getElementById('timer');
+                if (timerDiv) {
+                    timerDiv.innerHTML = `⏱️ Осталось до 29 марта 8:00: ${days}д ${hours}ч ${minutes}м ${seconds}с`;
                 }
             }
             
-            const savedChecking = localStorage.getItem('checkingStates');
-            if (savedChecking) {
-                checkingStates = JSON.parse(savedChecking);
-            }
-            
-            renderTasks();
+            updateTimer();
+            setInterval(updateTimer, 1000);
         }
-
-
-        // Таймер до 8:00 29 марта 2026 года
-        function startTimer() {
-        // 29 марта 2026 года, 8:00 утра
-        const targetDate = new Date(2026, 2, 29, 8, 0, 0); // 2 = март (январь=0, февраль=1, март=2)
         
-        function updateTimer() {
-            const now = new Date();
-            const diff = targetDate - now;
-            
-            if (diff <= 0) {
-                document.getElementById('timer').innerHTML = '⏰ Время вышло! Подарок ждет тебя! 🎁';
-                return;
-            }
-            
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            document.getElementById('timer').innerHTML = `⏱️ Осталось до 29 марта 8:00: ${days}д ${hours}ч ${minutes}м ${seconds}с`;
-        }
-    
-    updateTimer();
-    setInterval(updateTimer, 1000);
-}
-        
-        // Проверяем, аутентифицирован ли пользователь
+        // Инициализация
         if (localStorage.getItem('authenticated') === 'true') {
             document.body.classList.remove('blurred');
         }
         
-        // Загружаем прогресс и запускаем
-        loadProgress();
+        loadTasksStatus();
         startTimer();
         
-        // Функция для ручного переключения статуса (для админа)
-        window.adminCompleteTask = function(taskId) {
-            if (tasks[taskId].status === 'checking') {
-                completeTask(taskId);
-            }
-        };
-        
-        // Консольная команда для быстрого открытия всех заданий (для тестирования)
-        window.unlockAll = function() {
-            tasks.forEach((task, i) => {
-                task.unlocked = true;
-            });
-            renderTasks();
-            console.log('Все задания разблокированы!');
-        };
-        
-        // Для админа: принудительно завершить задание
-        window.forceComplete = function(taskId) {
-            if (tasks[taskId]) {
-                completeTask(taskId);
-            }
+        // Для админа: принудительно перезагрузить статусы
+        window.refreshTasks = function() {
+            loadTasksStatus();
         };
     </script>
 </body>
