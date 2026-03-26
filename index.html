@@ -539,7 +539,7 @@
         function updateProgress() {
             const completedCount = tasks.filter(t => t.status === 'done').length;
             const total = tasks.length;
-            const percent = total > 0 ? (completedCount / total) * 100 : 0;
+            const percent = total >= 0 ? (completedCount / total) * 100 : 0;
             
             console.log(`📊 Прогресс: ${completedCount}/${total} = ${percent.toFixed(0)}%`);
             

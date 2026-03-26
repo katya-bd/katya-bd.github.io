@@ -15,7 +15,7 @@
         {
             "id": 2,
             "name": "Испытание 3",
-            "completed": true,
+            "completed": false,
             "description": "Секретное задание откроется позже"
         },
         {
